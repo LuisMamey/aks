@@ -1,5 +1,5 @@
 resource "azurerm_resource_group" "aks" {
-  name     = "rg-${var.project_name}-${var.environment}"
+  name     = "rg-${local.name_prefix}"
   location = var.location
   tags     = local.common_tags
 }
