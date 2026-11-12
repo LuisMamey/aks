@@ -14,6 +14,7 @@ resource "azurerm_subnet" "aks" {
 }
 
 resource "azurerm_network_security_group" "aks" {
+  #checkov:skip=CKV_AZURE_160:Accepted risk — see docs/adr/0004-demo-http-inbound-scope.md
   name                = "nsg-aks-nodes"
   location            = azurerm_resource_group.aks.location
   resource_group_name = azurerm_resource_group.aks.name
