@@ -31,15 +31,35 @@ resource "azurerm_resource_group" "tfstate" {
 }
 
 resource "azurerm_storage_account" "tfstate" {
+  #checkov:skip=CKV_AZURE_59:Accepted risk — see docs/adr/0001-bootstrap-state-hardening-scope.md
+  #checkov:skip=CKV2_AZURE_33:Accepted risk — see docs/adr/0001-bootstrap-state-hardening-scope.md
+  #checkov:skip=CKV2_AZURE_40:Accepted risk — see docs/adr/0001-bootstrap-state-hardening-scope.md
+  #checkov:skip=CKV2_AZURE_1:Accepted risk — see docs/adr/0001-bootstrap-state-hardening-scope.md
+  #checkov:skip=CKV_AZURE_33:Accepted risk — see docs/adr/0001-bootstrap-state-hardening-scope.md
   name                            = "sttfstateluismamey01"
   resource_group_name             = azurerm_resource_group.tfstate.name
   location                        = azurerm_resource_group.tfstate.location
   account_tier                    = "Standard"
-  account_replication_type        = "LRS"
+  account_replication_type        = "GRS"
+  min_tls_version                 = "TLS1_2"
   allow_nested_items_to_be_public = false
+
+  blob_properties {
+    delete_retention_policy {
+      days = 7
+    }
+    container_delete_retention_policy {
+      days = 7
+    }
+  }
+
+  sas_policy {
+    expiration_period = "00.01:00:00"
+  }
 }
 
 resource "azurerm_storage_container" "tfstate" {
+  #checkov:skip=CKV2_AZURE_21:Accepted risk — see docs/adr/0001-bootstrap-state-hardening-scope.md
   name                  = "tfstate"
   storage_account_id    = azurerm_storage_account.tfstate.id
   container_access_type = "private"

@@ -21,7 +21,8 @@ jobs:
       - name: Check formatting
         run: terraform fmt -check -recursive
 
-      - name: Validate root configuration
+      - name: Validate terraform configuration
+        working-directory: terraform
         run: |
           terraform init -backend=false
           terraform validate
