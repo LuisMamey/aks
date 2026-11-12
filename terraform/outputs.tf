@@ -17,3 +17,8 @@ output "acr_login_server" {
   description = "The URL of the private Azure Container Registry."
   value       = azurerm_container_registry.acr.login_server
 }
+
+output "workload_identity_client_id" {
+  description = "Client ID of the User Assigned Identity for the Kubernetes ServiceAccount."
+  value       = azurerm_user_assigned_identity.app.client_id
+}

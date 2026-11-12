@@ -13,6 +13,8 @@ resource "azurerm_kubernetes_cluster" "aks" {
   sku_tier                  = "Free"
   automatic_upgrade_channel = "patch"
   azure_policy_enabled      = true
+  oidc_issuer_enabled       = true
+  workload_identity_enabled = true
 
   default_node_pool {
     name                        = "system"
