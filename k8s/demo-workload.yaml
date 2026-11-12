@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-store-api
+  namespace: default
+  labels:
+    app: demo-store
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: demo-store
+  template:
+    metadata:
+      labels:
+        app: demo-store
+    spec:
+      containers:
+      - name: web
+        image: nginxdemos/hello:plain-text
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            cpu: 50m
+            memory: 64Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-store-svc
+  namespace: default
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 80
+  selector:
+    app: demo-store
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: traffic-generator
+  namespace: default
+  labels:
+    app: traffic-gen
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: traffic-gen
+  template:
+    metadata:
+      labels:
+        app: traffic-gen
+    spec:
+      containers:
+      - name: curl
+        image: curlimages/curl:latest
+        command: ["/bin/sh", "-c"]
+        args:
+        - while true; do curl -s http://demo-store-svc.default.svc.cluster.local > /dev/null; sleep 0.05; done
