@@ -43,6 +43,7 @@ resource "azurerm_storage_account" "tfstate" {
   account_replication_type        = "GRS"
   min_tls_version                 = "TLS1_2"
   allow_nested_items_to_be_public = false
+  shared_access_key_enabled       = true
 
   blob_properties {
     delete_retention_policy {
@@ -55,6 +56,7 @@ resource "azurerm_storage_account" "tfstate" {
 
   sas_policy {
     expiration_period = "00.01:00:00"
+    expiration_action = "Log"
   }
 }
 
