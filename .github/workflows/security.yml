@@ -1,0 +1,61 @@
+name: Security Gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  terraform:
+    name: Terraform Format & Validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+
+      - name: Check formatting
+        run: terraform fmt -check -recursive
+
+      - name: Validate root configuration
+        run: |
+          terraform init -backend=false
+          terraform validate
+
+      - name: Validate bootstrap configuration
+        working-directory: bootstrap
+        run: |
+          terraform init -backend=false
+          terraform validate
+
+  gitleaks:
+    name: Secret Scanning (Gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: "1.x"
+
+      - name: Install Gitleaks
+        run: go install github.com/zricethezav/gitleaks/v8@v8.30.1
+
+      - name: Run Gitleaks
+        run: gitleaks detect --source . -v
+
+  checkov:
+    name: IaC Security (Checkov)
+    runs-on: ubuntu-latest
+    container:
+      image: bridgecrew/checkov:3.3.16
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Run Checkov
+        run: checkov -d .
