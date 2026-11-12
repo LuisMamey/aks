@@ -1,4 +1,12 @@
 resource "azurerm_container_registry" "acr" {
+  #checkov:skip=CKV_AZURE_165:Accepted risk — see docs/adr/0003-acr-tier-and-security-scope.md
+  #checkov:skip=CKV_AZURE_233:Accepted risk — see docs/adr/0003-acr-tier-and-security-scope.md
+  #checkov:skip=CKV_AZURE_139:Accepted risk — see docs/adr/0003-acr-tier-and-security-scope.md
+  #checkov:skip=CKV_AZURE_237:Accepted risk — see docs/adr/0003-acr-tier-and-security-scope.md
+  #checkov:skip=CKV_AZURE_167:Accepted risk — see docs/adr/0003-acr-tier-and-security-scope.md
+  #checkov:skip=CKV_AZURE_164:Accepted risk — see docs/adr/0003-acr-tier-and-security-scope.md
+  #checkov:skip=CKV_AZURE_163:Accepted risk — see docs/adr/0003-acr-tier-and-security-scope.md
+  #checkov:skip=CKV_AZURE_166:Accepted risk — see docs/adr/0003-acr-tier-and-security-scope.md
   name                = "acr${replace(var.project_name, "-", "")}${var.environment}"
   resource_group_name = azurerm_resource_group.aks.name
   location            = azurerm_resource_group.aks.location
