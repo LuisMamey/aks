@@ -29,9 +29,20 @@ A production-grade, highly secure, and cost-optimized **Azure Kubernetes Service
 
 ## 👔 Executive Summary (For Recruiters & Hiring Managers)
 
-This project simulates a real-world enterprise cloud platform initiative. It demonstrates how a Senior DevOps / Cloud Platform Engineer architects, automates, securitizes, and operates Kubernetes workloads on Microsoft Azure while adhering to strict governance, budget constraints, and auditability.
+### The Real-World Problem
+Many Kubernetes implementations across cloud providers suffer from three widespread enterprise anti-patterns:
+1. **Secret Sprawl & Credential Leaks:** Storing long-lived service principal client secrets, passwords, or connection strings inside Kubernetes Secret objects or environment variables.
+2. **Subnet IP Exhaustion:** Traditional cloud CNI plugins assign dedicated private VNet/VPC IPs to every pod, rapidly depleting corporate address spaces and blocking cluster scalability.
+3. **Unbounded Cloud Spend & Compliance Failure:** Deploying clusters without strict IaC static analysis (failing CIS benchmarks), leaving expensive managed OS disks running 24/7, and lacking formal architectural documentation for risk acceptance.
 
-### Key Competencies Demonstrated
+### The Solution: Enterprise AKS Platform
+This repository delivers an **auditable, zero-trust cloud-native blueprint on Microsoft Azure**:
+1. **Passwordless Workload Identity:** Replaces static cloud secrets with short-lived **OIDC token federation** directly between Kubernetes ServiceAccounts and Microsoft Entra ID.
+2. **Azure CNI Overlay:** Isolates pod networking into an overlay CIDR (`192.168.0.0/16`), conserving enterprise VNet IP space while retaining full network policy enforcement.
+3. **Automated DevSecOps Quality Gate:** Every commit is strictly evaluated by **Checkov** (zero unjustified skips), **Gitleaks** (secret detection), and **OpenSSF Scorecard** (supply-chain security).
+4. **FinOps & Platform Automation:** Fully automated via `./scripts/platform.sh` — provisions infrastructure and workloads, validates federated identities, and stops nodes to **$0.00/hr compute** when idle.
+
+### Technical Competency Matrix
 
 | Domain | Key Deliverables & Practical Implementation |
 | :--- | :--- |
@@ -41,6 +52,7 @@ This project simulates a real-world enterprise cloud platform initiative. It dem
 | **SRE & Observability** | Configured **Azure Monitor Container Insights** via Log Analytics Workspace, capturing live cluster, controller, container, and node metrics over 24+ hours of continuous traffic. |
 | **Shift-Left DevSecOps** | Automated CI/CD pipeline blocking pull requests on static analysis (**Checkov** with zero unverified skips), secret scanning (**Gitleaks**), and supply-chain analysis (**OpenSSF Scorecard**). |
 | **Architecture Governance** | Documented all intentional risk/cost trade-offs through formal **Architecture Decision Records (ADRs)**. |
+| **Platform Automation** | End-to-end lifecycle automation (`./scripts/platform.sh up / down / status / stop / test-identity`). |
 
 ---
 
@@ -190,6 +202,8 @@ Following enterprise governance standards, all architectural decisions, complian
 ├── k8s/                            # Kubernetes workload manifests
 │   ├── demo-workload.yaml          # Nginx API Deployment, LoadBalancer Service, Traffic Generator
 │   └── workload-identity-demo.yaml # Workload Identity ServiceAccount and verification Pod
+├── scripts/
+│   └── platform.sh                 # Automated platform lifecycle automation (up/down/status/stop)
 ├── terraform/                      # Core AKS infrastructure stack
 │   ├── acr.tf                      # Azure Container Registry (Basic SKU, RBAC AcrPull)
 │   ├── aks.tf                      # AKS Cluster (Standard_D2ds_v6, Ephemeral OS, CNI Overlay, OIDC)
@@ -202,6 +216,8 @@ Following enterprise governance standards, all architectural decisions, complian
 │   ├── providers.tf                # Azurerm provider (~> 5.13) & remote backend config
 │   ├── terraform.tfvars.example    # Variable templates for reproducibility
 │   └── variables.tf                # Parameter declarations (subscription, region, environment)
+├── LICENSE                         # MIT License
+├── SECURITY.md                     # Security and vulnerability reporting policy
 └── README.md
 ```
 
@@ -215,7 +231,34 @@ Following enterprise governance standards, all architectural decisions, complian
 * [kubectl](https://kubernetes.io/docs/tasks/tools/) `v1.30+`
 * Active Azure Subscription with at least 4 vCPUs quota in `eastus2`.
 
-### Step 1: Bootstrap the Remote State Backend
+### Option A: Automated One-Command Lifecycle (Recommended)
+This platform includes a complete lifecycle automation script `./scripts/platform.sh`:
+
+```bash
+# Provision everything (bootstrap state + AKS infrastructure + workloads):
+./scripts/platform.sh up
+
+# Inspect live cluster health, nodes, pods, and public HTTP endpoint:
+./scripts/platform.sh status
+
+# Verify zero-secret Workload Identity OIDC federation:
+./scripts/platform.sh test-identity
+
+# Pause AKS nodes to drop compute cost to $0.00/hr:
+./scripts/platform.sh stop
+
+# Resume paused AKS cluster:
+./scripts/platform.sh start
+
+# Complete teardown of all Azure resources:
+./scripts/platform.sh down
+```
+
+---
+
+### Option B: Manual Step-by-Step Reproduction
+
+#### Step 1: Bootstrap the Remote State Backend
 ```bash
 az login
 cd bootstrap
