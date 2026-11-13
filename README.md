@@ -15,14 +15,15 @@ A production-grade, highly secure, and cost-optimized **Azure Kubernetes Service
 
 ## 📌 Table of Contents
 1. [Platform Overview & Objectives](#-platform-overview--objectives)
-2. [Cloud Architecture Reference: AWS to Azure](#-cloud-architecture-reference-aws-to-azure)
-3. [Live Telemetry & Production Verification](#-live-telemetry--production-verification)
-4. [Core Engineering Highlights](#-core-engineering-highlights)
-5. [Architecture Decision Records (ADRs)](#-architecture-decision-records-adrs)
-6. [Repository Structure](#-repository-structure)
-7. [Getting Started & Reproducibility](#-getting-started--reproducibility)
-8. [DevSecOps & CI/CD Pipeline](#-devsecops--cicd-pipeline)
-9. [Resource Cleanup & Cost Control](#-resource-cleanup--cost-control)
+2. [Architecture Overview](#-architecture-overview)
+3. [Cloud Architecture Reference: AWS to Azure](#-cloud-architecture-reference-aws-to-azure)
+4. [Live Telemetry & Production Verification](#-live-telemetry--production-verification)
+5. [Core Engineering Highlights](#-core-engineering-highlights)
+6. [Architecture Decision Records (ADRs)](#-architecture-decision-records-adrs)
+7. [Repository Structure](#-repository-structure)
+8. [Getting Started & Reproducibility](#-getting-started--reproducibility)
+9. [DevSecOps & CI/CD Pipeline](#-devsecops--cicd-pipeline)
+10. [Resource Cleanup & Cost Control](#-resource-cleanup--cost-control)
 
 ---
 
@@ -52,6 +53,12 @@ This repository delivers an **auditable, zero-trust cloud-native platform on Mic
 | **Shift-Left DevSecOps** | Automated CI/CD pipeline blocking pull requests on static analysis (**Checkov** with zero unverified skips), secret scanning (**Gitleaks**), and supply-chain analysis (**OpenSSF Scorecard**). |
 | **Architecture Governance** | Documented all intentional risk/cost trade-offs through formal **Architecture Decision Records (ADRs)**. |
 | **Platform Automation** | End-to-end lifecycle automation (`./scripts/platform.sh up / down / status / stop / test-identity`). |
+
+---
+
+## 🏛 Architecture Overview
+
+![Platform Architecture](docs/images/architecture.png)
 
 ---
 
