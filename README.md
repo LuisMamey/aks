@@ -14,35 +14,34 @@ A production-grade, highly secure, and cost-optimized **Azure Kubernetes Service
 ---
 
 ## 📌 Table of Contents
-1. [Executive Summary (For Recruiters & Hiring Managers)](#-executive-summary-for-recruiters--hiring-managers)
-2. [Cross-Cloud Translation: AWS to Azure](#-cross-cloud-translation-aws-to-azure)
-3. [Architecture Overview](#-architecture-overview)
-4. [Live Telemetry & Production Verification](#-live-telemetry--production-verification)
-5. [Core Engineering Highlights](#-core-engineering-highlights)
-6. [Architecture Decision Records (ADRs)](#-architecture-decision-records-adrs)
-7. [Repository Structure](#-repository-structure)
-8. [Getting Started & Reproducibility](#-getting-started--reproducibility)
-9. [DevSecOps & CI/CD Pipeline](#-devsecops--cicd-pipeline)
-10. [Resource Cleanup & Cost Control](#-resource-cleanup--cost-control)
+1. [Platform Overview & Objectives](#-platform-overview--objectives)
+2. [Cloud Architecture Reference: AWS to Azure](#-cloud-architecture-reference-aws-to-azure)
+3. [Live Telemetry & Production Verification](#-live-telemetry--production-verification)
+4. [Core Engineering Highlights](#-core-engineering-highlights)
+5. [Architecture Decision Records (ADRs)](#-architecture-decision-records-adrs)
+6. [Repository Structure](#-repository-structure)
+7. [Getting Started & Reproducibility](#-getting-started--reproducibility)
+8. [DevSecOps & CI/CD Pipeline](#-devsecops--cicd-pipeline)
+9. [Resource Cleanup & Cost Control](#-resource-cleanup--cost-control)
 
 ---
 
-## 👔 Executive Summary (For Recruiters & Hiring Managers)
+## 🎯 Platform Overview & Objectives
 
-### The Real-World Problem
-Many Kubernetes implementations across cloud providers suffer from three widespread enterprise anti-patterns:
+### The Problem
+Kubernetes deployments in cloud environments frequently run into three common operational challenges:
 1. **Secret Sprawl & Credential Leaks:** Storing long-lived service principal client secrets, passwords, or connection strings inside Kubernetes Secret objects or environment variables.
 2. **Subnet IP Exhaustion:** Traditional cloud CNI plugins assign dedicated private VNet/VPC IPs to every pod, rapidly depleting corporate address spaces and blocking cluster scalability.
 3. **Unbounded Cloud Spend & Compliance Failure:** Deploying clusters without strict IaC static analysis (failing CIS benchmarks), leaving expensive managed OS disks running 24/7, and lacking formal architectural documentation for risk acceptance.
 
-### The Solution: Enterprise AKS Platform
-This repository delivers an **auditable, zero-trust cloud-native blueprint on Microsoft Azure**:
+### The Solution: Cloud-Native AKS Blueprint
+This repository delivers an **auditable, zero-trust cloud-native platform on Microsoft Azure**:
 1. **Passwordless Workload Identity:** Replaces static cloud secrets with short-lived **OIDC token federation** directly between Kubernetes ServiceAccounts and Microsoft Entra ID.
 2. **Azure CNI Overlay:** Isolates pod networking into an overlay CIDR (`192.168.0.0/16`), conserving enterprise VNet IP space while retaining full network policy enforcement.
 3. **Automated DevSecOps Quality Gate:** Every commit is strictly evaluated by **Checkov** (zero unjustified skips), **Gitleaks** (secret detection), and **OpenSSF Scorecard** (supply-chain security).
 4. **FinOps & Platform Automation:** Fully automated via `./scripts/platform.sh` — provisions infrastructure and workloads, validates federated identities, and stops nodes to **$0.00/hr compute** when idle.
 
-### Technical Competency Matrix
+### Core Engineering Capabilities
 
 | Domain | Key Deliverables & Practical Implementation |
 | :--- | :--- |
@@ -56,9 +55,9 @@ This repository delivers an **auditable, zero-trust cloud-native blueprint on Mi
 
 ---
 
-## 🔄 Cross-Cloud Translation: AWS to Azure
+## 🔄 Cloud Architecture Reference: AWS to Azure
 
-For engineering teams or hiring managers evaluating candidates from an **AWS ecosystem**, here is how each component maps directly between cloud providers:
+For engineering teams operating multi-cloud environments or transitioning between cloud ecosystems, here is how each core component maps between AWS and Azure:
 
 | Capability | AWS Equivalent | Azure Implementation in this Project | Rationale / Benefits |
 | :--- | :--- | :--- | :--- |
@@ -69,52 +68,6 @@ For engineering teams or hiring managers evaluating candidates from an **AWS eco
 | **Container Monitoring** | CloudWatch Container Insights | **Azure Monitor Container Insights** | Unified logging and metrics ingested into Log Analytics with pre-built Workbooks and Alert rules. |
 | **IaC State Storage** | S3 + DynamoDB State Locking | **Azure Blob Storage (tfstate)** | Blob container with lease locking, TLS 1.2 enforcement, and 7-day soft-delete protection. |
 | **Node Storage** | EC2 Instance Store | **Azure Ephemeral OS Disks** | OS disk hosted on the VM's local NVMe storage (`Standard_D2ds_v6`), lowering latency and eliminating managed disk fees. |
-
----
-
-## 🏛 Architecture Overview
-
-```mermaid
-flowchart TD
-    subgraph Internet["Public Internet / Consumers"]
-        Client["Browser / Client Request"]
-        TrafficGen["Traffic Generator (Synthetic Load)"]
-    end
-
-    subgraph AzureCloud["Microsoft Azure Subscription (eastus2)"]
-        subgraph SecurityBoundary["Network Security Group (nsg-aks-nodes)"]
-            LB["Azure Public Load Balancer<br/>57.165.9.121:80"]
-        end
-
-        subgraph VNet["Virtual Network (10.10.0.0/16)"]
-            subgraph NodeSubnet["AKS Subnet: snet-aks-nodes (10.10.1.0/24)"]
-                subgraph Node["AKS Node: Standard_D2ds_v6 (NVMe Ephemeral OS)"]
-                    subgraph K8sOverlay["Azure CNI Overlay (192.168.0.0/16)"]
-                        AppPod["demo-store-api<br/>(Nginx App Pod)"]
-                        IdPod["azure-identity-demo<br/>(ServiceAccount: workload-identity-sa)"]
-                        AMAPod["ama-logs DaemonSet<br/>(Azure Monitor Agent)"]
-                        Gatekeeper["gatekeeper-controller<br/>(Azure Policy Add-on)"]
-                    end
-                end
-            end
-        end
-
-        subgraph ManagedServices["Azure PaaS & Security Services"]
-            ACR["Azure Container Registry (ACR)<br/>acraksmetricsdev.azurecr.io<br/>(RBAC: AcrPull)"]
-            LAW["Log Analytics Workspace (LAW)<br/>law-aks-metrics-dev<br/>(30-day retention)"]
-            Storage["Azure Storage Account<br/>sttfstateluismamey01<br/>(TLS 1.2, GRS, Soft Delete)"]
-            EntraID["Microsoft Entra ID<br/>OIDC Issuer & Federated Credential<br/>id-aks-metrics-dev-app"]
-        end
-    end
-
-    Client -->|HTTP:80| LB
-    TrafficGen -->|Continuous HTTP:80| LB
-    LB --> AppPod
-    AMAPod -->|Logs & Metrics| LAW
-    Node -->|AcrPull| ACR
-    IdPod -->|Federated Token (OIDC)| EntraID
-    EntraID -->|Storage Blob Data Reader| Storage
-```
 
 ---
 
