@@ -121,10 +121,15 @@ cmd_start() {
 cmd_up() {
   check_prereqs
 
+  local var_flag=()
+  if [[ -f "${TF_DIR}/terraform.tfvars" ]]; then
+    var_flag=(-var-file="${TF_DIR}/terraform.tfvars")
+  fi
+
   log_info "==> Step 1: Initializing and applying remote state bootstrap..."
   cd "${BOOTSTRAP_DIR}"
   terraform init
-  terraform apply -auto-approve
+  terraform apply -auto-approve "${var_flag[@]}"
 
   log_info "==> Step 2: Initializing and applying core infrastructure..."
   cd "${TF_DIR}"
@@ -145,12 +150,22 @@ cmd_up() {
 
 cmd_down() {
   check_prereqs
+
+  local var_flag=()
+  if [[ -f "${TF_DIR}/terraform.tfvars" ]]; then
+    var_flag=(-var-file="${TF_DIR}/terraform.tfvars")
+  fi
+
   log_warn "This will destroy all AKS compute, networking, and application resources."
   read -r -p "Are you sure you want to proceed? [y/N] " response
   if [[ "${response}" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-    log_info "==> Destroying Kubernetes workloads..."
-    kubectl delete -f "${K8S_DIR}/demo-workload.yaml" --ignore-not-found || true
-    kubectl delete -f "${K8S_DIR}/workload-identity-demo.yaml" --ignore-not-found || true
+    if kubectl cluster-info --request-timeout=3s >/dev/null 2>&1; then
+      log_info "==> Destroying Kubernetes workloads..."
+      kubectl delete -f "${K8S_DIR}/demo-workload.yaml" --ignore-not-found --request-timeout=5s || true
+      kubectl delete -f "${K8S_DIR}/workload-identity-demo.yaml" --ignore-not-found --request-timeout=5s || true
+    else
+      log_info "==> Cluster is already stopped or destroyed, skipping workload deletion."
+    fi
 
     log_info "==> Destroying core infrastructure via Terraform..."
     cd "${TF_DIR}"
@@ -158,7 +173,7 @@ cmd_down() {
 
     log_info "==> Destroying bootstrap remote state..."
     cd "${BOOTSTRAP_DIR}"
-    terraform destroy -auto-approve
+    terraform destroy -auto-approve "${var_flag[@]}"
 
     log_ok "Teardown complete. All Azure resources removed."
   else
